@@ -28,7 +28,7 @@ BITFIELD_ADDR_IRAM  EQU 0x40
 ORG 0x0070 ; Move if more code memory is required for the program code
 BITFIELD_ADDR_CODE:
 DB 0x00, 0x00, 0x00, 0x80, 0x55, 0xAA, 0xA0, 0xCC, 0x12, 0x13, 0x11, 0x10, 0x05, 0xAA, 0x42, 0x34
-; Pattern in binary format (MSB first):
+; Pattern in binary format (MSB first), correct answer is 103:
 ; 0000 0000 0000 0000 0000 0000 1000 0000 0101 0101 1010 1010 1010 0000 1100 1100
 ; 0001 0010 0001 0011 0001 0001 0001 0000 0000 0101 1010 1010 0100 0010 0011 0100
 
@@ -110,11 +110,11 @@ CODE2IRAM_LOOP:
 ; Note: The subroutine must not modify the input array.
 ; -------------------------------------------------------------------
 ; INPUT(S):
-;   R7 - Base address of the 128-bit bitfield in the internal memory
+;   R7 - Base address of the 128-bit bitfield in the internal memory in big-endian format.
 ; OUTPUT(S): 
 ;   R5 - Position of the highest "1" bit, counted from LSB (position counts from zero or one as long as I specified but better one)
 ; MODIFIES:
-;   [TODO]
+;   A
 ; -------------------------------------------------------------------
 
 FIND_FIRST_1_NOMOD:
@@ -122,22 +122,53 @@ FIND_FIRST_1_NOMOD:
     MOV A, R7
     MOV R1, A
 
-    ; move first byte to R3
+    ; we need to process 8 bytes
+    MOV R4, #16
+
+FIND_FIRST_1_NOMOD_LOOP:
+    ; move current byte to R3
     MOV A, @R1
     MOV R3, A
+
     CALL FIND_FIRST_1_IN_BYTE
+
+    ; check if we found "1"
+    MOV A, R2
+    XRL A, #255
+    JNZ FIND_FIRST_1_NOMOD_FOUND
+
+    INC R1
+
+    DJNZ R4, FIND_FIRST_1_NOMOD_LOOP
+
+    MOV R5, #255
+    RET
+
+FIND_FIRST_1_NOMOD_FOUND:
+    DEC R4
+    
+    ; current byte number
+    MOV A, R4
+
+    ; 1 byte = 8 bit
+    MOV B, #8
+
+    ; calculate offset
+    MUL AB
+    ADD A, R2
+
+    MOV R5, A
     RET
 
 ; -------------------------------------------------------------------
 ; FIND_FIRST_1_IN_BYTE
 ; -------------------------------------------------------------------
-; Finds the highest order "1" bit in a 8 bit. 
-; Note: The subroutine must not modify the input array.
+; Finds the highest order "1" bit in a 8 bit.
 ; -------------------------------------------------------------------
 ; INPUT(S):
-;   R3 - Byte value
+;   R3 - byte value in big-endian format.
 ; OUTPUT(S): 
-;   R2 - Position of the highest "1" bit in a byte, if no "1" found returns 0xFF
+;   R2 - Position of the highest "1" bit in a byte, if no "1" found returns 0xFF. Position is counted from zero.
 ; MODIFIES:
 ;   A, R2
 ; -------------------------------------------------------------------
