@@ -118,14 +118,46 @@ CODE2IRAM_LOOP:
 ; -------------------------------------------------------------------
 
 FIND_FIRST_1_NOMOD:
+    ; load address to addressable 
+    MOV A, R7
+    MOV R1, A
 
-; [TODO: Place your code here]
-    
+    ; move first byte to R3
+    MOV A, @R1
+    MOV R3, A
+    CALL FIND_FIRST_1_IN_BYTE
     RET
 
-; [TODO: You can also create other subroutines if needed.]
+; -------------------------------------------------------------------
+; FIND_FIRST_1_IN_BYTE
+; -------------------------------------------------------------------
+; Finds the highest order "1" bit in a 8 bit. 
+; Note: The subroutine must not modify the input array.
+; -------------------------------------------------------------------
+; INPUT(S):
+;   R3 - Byte value
+; OUTPUT(S): 
+;   R2 - Position of the highest "1" bit in a byte, if no "1" found returns 0xFF
+; MODIFIES:
+;   A, R2
+; -------------------------------------------------------------------
+FIND_FIRST_1_IN_BYTE:
+    ; sets first position of 7 in a byte, fixed value
+    MOV R2, #8
+    MOV A, R3
 
+FIND_FIRST_1_IN_BYTE_LOOP:
+    JB 0xE7, FIND_FIRST_1_IN_BYTE_FOUND
+    RL A
+    DJNZ R2, FIND_FIRST_1_IN_BYTE_LOOP
 
+    ; if "1" is not found
+    MOV R2, #255 ; 0xFF is not working for some reasons
+    RET
+
+FIND_FIRST_1_IN_BYTE_FOUND:
+    DEC R2
+    RET
 
 ; End of the source file
 END
