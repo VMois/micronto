@@ -21,16 +21,29 @@ BITFIELD_LEN  EQU 16
 BITFIELD_ADDR_IRAM  EQU 0x40
 
 ; Test data for input parameters
-; (Try also other values while testing your code.)
-
 ; Store the bitfield as bytes in the code memory
 
 ORG 0x0070 ; Move if more code memory is required for the program code
 BITFIELD_ADDR_CODE:
 DB 0x00, 0x00, 0x00, 0x80, 0x55, 0xAA, 0xA0, 0xCC, 0x12, 0x13, 0x11, 0x10, 0x05, 0xAA, 0x42, 0x34
-; Pattern in binary format (MSB first), correct answer is 103:
+; Pattern in binary format (MSB first), correct answer is 103 (0x67):
 ; 0000 0000 0000 0000 0000 0000 1000 0000 0101 0101 1010 1010 1010 0000 1100 1100
 ; 0001 0010 0001 0011 0001 0001 0001 0000 0000 0101 1010 1010 0100 0010 0011 0100
+
+BITFIELD_ADDR_CODE_FIRST_ONE:
+DB 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+; Pattern in binary format (MSB first), correct answer is 127 (0x7F):
+; 1000 0000 .... 0000 0000
+
+BITFIELD_ADDR_CODE_LAST_ONE:
+DB 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01
+; Pattern in binary format (MSB first), correct answer is 0 (0x00):
+; 0000 0000 .... 0000 0001
+
+BITFIELD_ADDR_CODE_NO_ONE:
+DB 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+; Pattern in binary format (MSB first), correct answer is 255 (0xFF):
+; 0000 0000 .... 0000 0000
 
 ; Interrupt jump table
 ORG 0x0000;
@@ -48,8 +61,8 @@ ORG 0x0010
 MAIN:
 
     ; Prepare input parameters for the subroutine
-	MOV R5, #HIGH(BITFIELD_ADDR_CODE)
-	MOV R6, #LOW(BITFIELD_ADDR_CODE)
+	MOV R5, #HIGH(BITFIELD_ADDR_CODE_NO_ONE)
+	MOV R6, #LOW(BITFIELD_ADDR_CODE_NO_ONE)
 	MOV R7, #BITFIELD_ADDR_IRAM
 	CALL CODE2IRAM ; Copy the bitfield from code memory to internal memory
 	
@@ -72,7 +85,7 @@ LOOP:
 ; -------------------------------------------------------------------
 ; CODE2IRAM
 ; -------------------------------------------------------------------
-; Purpose: Copy the 128-but bitfield from code memory to internal memory in a big-endian format
+; Purpose: Copy the 128-but bitfield from code memory to internal memory in a big-endian format.
 ; -------------------------------------------------------------------
 ; INPUT(S):
 ;   R5 - Base address of the bitfield in code memory (high byte)
@@ -81,7 +94,7 @@ LOOP:
 ; OUTPUT(S): 
 ;   -
 ; MODIFIES:
-;   [TODO] R7, A, DPTR, R1 (needed for indirect adressing)
+;   A, DPTR, R1, R7
 ; -------------------------------------------------------------------
 
 CODE2IRAM:
@@ -112,18 +125,18 @@ CODE2IRAM_LOOP:
 ; INPUT(S):
 ;   R7 - Base address of the 128-bit bitfield in the internal memory in big-endian format.
 ; OUTPUT(S): 
-;   R5 - Position of the highest "1" bit, counted from LSB (position counts from zero or one as long as I specified but better one)
+;   R5 - Position of the highest "1" bit, counted from LSB. The position number starts from zero.
 ; MODIFIES:
-;   A
+;   A, R1, R3, R4
 ; -------------------------------------------------------------------
 
 FIND_FIRST_1_NOMOD:
-    ; load address to addressable 
+    ; load address to addressable register
     MOV A, R7
     MOV R1, A
 
-    ; we need to process 8 bytes
-    MOV R4, #16
+    ; there are 16 bytes to check
+    MOV R4, #BITFIELD_LEN
 
 FIND_FIRST_1_NOMOD_LOOP:
     ; move current byte to R3
@@ -137,24 +150,27 @@ FIND_FIRST_1_NOMOD_LOOP:
     XRL A, #255
     JNZ FIND_FIRST_1_NOMOD_FOUND
 
+    ; step to the next byte
     INC R1
 
     DJNZ R4, FIND_FIRST_1_NOMOD_LOOP
 
+    ; if "1" is NOT found in 128-bit input, return 0xFF
     MOV R5, #255
     RET
 
 FIND_FIRST_1_NOMOD_FOUND:
+    ; get position of the least significant byte
     DEC R4
-    
-    ; current byte number
     MOV A, R4
 
     ; 1 byte = 8 bit
     MOV B, #8
 
-    ; calculate offset
+    ; calculate position offset from the right side
     MUL AB
+
+    ; add position of the highest "1" of the current byte to the calculated offset
     ADD A, R2
 
     MOV R5, A
@@ -163,17 +179,17 @@ FIND_FIRST_1_NOMOD_FOUND:
 ; -------------------------------------------------------------------
 ; FIND_FIRST_1_IN_BYTE
 ; -------------------------------------------------------------------
-; Finds the highest order "1" bit in a 8 bit.
+; Finds the highest order "1" bit in a 8 bit. Assuming input is in big-endian format.
 ; -------------------------------------------------------------------
 ; INPUT(S):
-;   R3 - byte value in big-endian format.
+;   R3 - Byte value in big-endian format.
 ; OUTPUT(S): 
 ;   R2 - Position of the highest "1" bit in a byte, if no "1" found returns 0xFF. Position is counted from zero.
 ; MODIFIES:
-;   A, R2
+;   A
 ; -------------------------------------------------------------------
 FIND_FIRST_1_IN_BYTE:
-    ; sets first position of 7 in a byte, fixed value
+    ; sets first position of 8 in a byte, fixed value
     MOV R2, #8
     MOV A, R3
 
@@ -183,7 +199,7 @@ FIND_FIRST_1_IN_BYTE_LOOP:
     DJNZ R2, FIND_FIRST_1_IN_BYTE_LOOP
 
     ; if "1" is not found
-    MOV R2, #255 ; 0xFF is not working for some reasons
+    MOV R2, #255 ; value of "0xFF" is not working in simulator
     RET
 
 FIND_FIRST_1_IN_BYTE_FOUND:
@@ -192,4 +208,3 @@ FIND_FIRST_1_IN_BYTE_FOUND:
 
 ; End of the source file
 END
-
