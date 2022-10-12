@@ -146,7 +146,7 @@ FIND_FIRST_1_NOMOD_LOOP:
 
     CALL FIND_FIRST_1_IN_BYTE
 
-    ; check if we found "1"
+    ; check if we found "1" using XOR and mask 0xFF
     MOV A, R2
     XRL A, #255
     JNZ FIND_FIRST_1_NOMOD_FOUND
@@ -161,7 +161,7 @@ FIND_FIRST_1_NOMOD_LOOP:
     RET
 
 FIND_FIRST_1_NOMOD_FOUND:
-    ; get position of the least significant byte
+    ; get position of the next byte
     DEC R4
     MOV A, R4
 
