@@ -2,7 +2,7 @@
 
 Author: Vladyslav Moisieienkov
 
-The code can be also found in the [GitHub repository]().
+The code can be also found in the [GitHub repository](https://github.com/VMois/micronto/tree/main/8051/find_highest_one).
 
 ## Description of the algorithm
 
