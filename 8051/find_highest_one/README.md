@@ -1,6 +1,6 @@
 # Find highest one - Documentation
 
-Author: Vladyslav Moisieienkov
+Author: Vladyslav Moisieienkov. **The solution is my own**.
 
 The code can be also found in the [GitHub repository](https://github.com/VMois/micronto/tree/main/8051/find_highest_one).
 
@@ -54,6 +54,8 @@ Routine `FIND_FIRST_1_NOMOD` is iterating over 16 bytes and calls the `FIND_FIRS
 *Note:* We can add a mask to check if a byte has *any* "1". This should speed-up the execution in case input has a lot of zeroes at the beginning. This was not implemented.
 
 ## Testing
+
+**Important:** due to some bug in simulator, when ASM file is loaded, one empty space is inserted at the beginning of file which triggers assembly error. The issue is visible, removing empty space solves the problem.
 
 The solution provides 4 values to test:
 
