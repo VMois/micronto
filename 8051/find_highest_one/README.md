@@ -6,30 +6,58 @@ The code can be also found in the [GitHub repository](https://github.com/VMois/m
 
 ## Description of the algorithm
 
-We have 16 byte (or 128-bit) input. Our microcontroller can only operate on one byte at a time.
-It means we will need to loop over the input 16 times in the worst case scenario.
+We have 16-byte (or 128-bit) input. Our microcontroller can only operate on one byte at a time.
+We need to loop over the input 16 times in the worst-case scenario.
 
-We assume that the input is stored in a *big-endian* format. We will iterate over 16 bytes starting from lower address and going up.
+We assume that the input is stored in a *big-endian* format. We will iterate over 16 bytes starting from the lower address and going up.
 
-Our output will be position of the highest (most significant) starting from zero.
+Our output will be the position of the highest (most significant) bit, starting from zero.
 
-For each byte, we will check if MSB of a byte is one. If MSB is not one, we will rotate byte to the left by one, and check again. If no "1" is found in the byte, we move to the next byte. If "1" is found in some byte, we will record its position within the byte. After, we calculate how many remaining bytes were left to check to determine the final position of the most significant one.
-The formula is:
+For each byte, we check if MSB is "1". If MSB is not "1", we rotate the byte to the left by one and check again. If no "1" is found in the byte, we move to the next least-significant byte. If "1" is located in the byte, we record its position within the byte. Then, if "1" is found, we calculate an offset based on how many remaining bytes were left to check and add the position of "1" we found earlier to determine the final position. If "1" is not found in 16 bytes, we return 0xFF.
+
+Below you can find the flowchart:
+
+![Flowchart of the algorithm](flowchart.png)
+
+The example for 3-byte (24-bit) input:
 
 ```
-final position = (current byte position - 1)*8 + position of one in current byte
+0010 0110 0111 0001 0011 1010 = 0x26 0x71 0x3A (big-endian)
 ```
 
-If no "1" was found in 16 bytes, we return 0xFF.
+1. We read most-significant byte - *0x26*;
+2. Find "1" in a byte:
 
+```
+0010 0110 => MSB = 0 and is not "1", rotate to the left
+0100 1100 => MSB = 0 and is not "1", rotate to the left
+1001 1000 => MSB = 1; we rotated two times, so 8 - 2 = 6; we also need to substract 1 to get position starting from zero; the final result is 8 - 2 - 1 = 5.
+```
+3. Calculate remaining offset and add position of "1":
 
-(put diagram here of algorithm steps)
+```
+Remaining bytes to check = 2 (*0x71* and *0x3A* were left)
+Final position of highest "1" = (Remaining byte to check * 8) + 5 = 2 * 8 + 5 = **21**.
+```
 
-## Description of implementation
+## Details of implementation
 
-DPTR - DPL (Low byte), DPH (High byte)
-...
+The `CODE2IRAM` routine copies a test value from a code to data memory. The implementation is straighforward and was discussed during the class.
+
+Routine `FIND_FIRST_1_IN_BYTE` is responsible for finding position of highest "1" in *a byte*. We are using `JB` instruction to check if MSB of Accumulator is "1". If not, we rotate value to the left using `RL` and repeat the process. If no "1" is found, *0xFF* is returned.
+
+Routine `FIND_FIRST_1_NOMOD` is iterating over 16 bytes and calls the `FIND_FIRST_1_IN_BYTE` routine for each byte. The `FIND_FIRST_1_NOMOD` checks the output of the `FIND_FIRST_1_IN_BYTE` and if "1" was found, `FIND_FIRST_1_NOMOD` calculates position of highest one and returns it.
+
+*Note:* We can add a mask to check if a byte has *any* "1". This should speed-up the execution in case input has a lot of zeroes at the beginning. This was not implemented.
 
 ## Testing
 
-...
+The solution provides 4 values to test:
+
+- **BITFIELD_ADDR_CODE**, original input;
+- **BITFIELD_ADDR_CODE_FIRST_ONE**, input value that has a single "1" bit as MSB of 16 byte (128-bit);
+- **BITFIELD_ADDR_CODE_LAST_ONE**, input value that has a single "1" bit as LSB of 16 byte (128-bit);
+- **BITFIELD_ADDR_CODE_NO_ONE**, input value that contains only "0" bits.
+- **BITFIELD_ADDR_CODE_ANOTHER_EXAMPLE**, input value that has "1" in the second least-significant byte.
+
+Modify high and low labels in `MAIN` to according label from above. The correct position for each input value is provided in the code comments.
