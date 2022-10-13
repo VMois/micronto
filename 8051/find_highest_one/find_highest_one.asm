@@ -66,8 +66,8 @@ ORG 0x0010
 MAIN:
 
     ; Prepare input parameters for the subroutine
-	MOV R5, #HIGH(BITFIELD_ADDR_CODE_ANOTHER_EXAMPLE)
-	MOV R6, #LOW(BITFIELD_ADDR_CODE_ANOTHER_EXAMPLE)
+	MOV R5, #HIGH(BITFIELD_ADDR_CODE)
+	MOV R6, #LOW(BITFIELD_ADDR_CODE)
 	MOV R7, #BITFIELD_ADDR_IRAM
 	CALL CODE2IRAM ; Copy the bitfield from code memory to internal memory
 	
