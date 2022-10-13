@@ -9,11 +9,14 @@ The code can be also found in the [GitHub repository](https://github.com/VMois/m
 We have 16-byte (or 128-bit) input. Our microcontroller can only operate on one byte at a time.
 We need to loop over the input 16 times in the worst-case scenario.
 
-We assume that the input is stored in a *big-endian* format. We will iterate over 16 bytes starting from the lower address and going up.
-
 Our output will be the position of the highest (most significant) bit, starting from zero.
 
-For each byte, we check if MSB is "1". If MSB is not "1", we rotate the byte to the left by one and check again. If no "1" is found in the byte, we move to the next least-significant byte. If "1" is located in the byte, we record its position within the byte. Then, if "1" is found, we calculate an offset based on how many remaining bytes were left to check and add the position of "1" we found earlier to determine the final position. If "1" is not found in 16 bytes, we return 0xFF.
+We assume that the input is stored in a *big-endian* format. We will iterate over 16 bytes starting from the lower address (most-significant byte) and going up (least-significant byte). For each byte:
+
+1. Check if MSB is "1". If MSB is not "1", we rotate the byte to the left by one and check MSB again.
+2. If no "1" is found in the byte, we move to the next least-significant byte and repeat step 1.
+3. If "1" is located in the byte, we record its position within the byte and calculate an offset based on how many remaining bytes were left to check and add the position of "1" we found earlier to determine the final position. 
+4. If "1" is not found in 16 bytes, we return 0xFF.
 
 Below you can find the flowchart:
 
