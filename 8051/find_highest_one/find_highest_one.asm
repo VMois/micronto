@@ -45,6 +45,11 @@ DB 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 ; Pattern in binary format (MSB first), correct answer is 255 (0xFF):
 ; 0000 0000 .... 0000 0000
 
+BITFIELD_ADDR_CODE_ANOTHER_EXAMPLE:
+DB 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00
+; Pattern in binary format (MSB first), correct answer is 9 (0x09):
+; 0000 0000 .... 0000 0010 0000 0000
+
 ; Interrupt jump table
 ORG 0x0000;
     SJMP  MAIN                  ; Reset vector
@@ -61,8 +66,8 @@ ORG 0x0010
 MAIN:
 
     ; Prepare input parameters for the subroutine
-	MOV R5, #HIGH(BITFIELD_ADDR_CODE)
-	MOV R6, #LOW(BITFIELD_ADDR_CODE)
+	MOV R5, #HIGH(BITFIELD_ADDR_CODE_ANOTHER_EXAMPLE)
+	MOV R6, #LOW(BITFIELD_ADDR_CODE_ANOTHER_EXAMPLE)
 	MOV R7, #BITFIELD_ADDR_IRAM
 	CALL CODE2IRAM ; Copy the bitfield from code memory to internal memory
 	
