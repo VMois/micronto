@@ -75,8 +75,6 @@ LOOP:
     SJMP  LOOP
 
 
-
-
 ; ===================================================================           
 ;                           SUBROUTINE(S)
 ; ===================================================================           
@@ -128,7 +126,7 @@ CODE2IRAM_LOOP:
 ; OUTPUT(S): 
 ;   R5 - Position of the highest "1" bit, counted from LSB. The position number starts from zero.
 ; MODIFIES:
-;   A, R1, R3, R4
+;   A, PSW, R1, R3, R4, R5
 ; -------------------------------------------------------------------
 
 FIND_FIRST_1_NOMOD:
@@ -154,6 +152,7 @@ FIND_FIRST_1_NOMOD_LOOP:
     ; step to the next byte
     INC R1
 
+    ; check if we have remaining bytes to check
     DJNZ R4, FIND_FIRST_1_NOMOD_LOOP
 
     ; if "1" is NOT found in 128-bit input, return 0xFF
@@ -168,7 +167,7 @@ FIND_FIRST_1_NOMOD_FOUND:
     ; 1 byte = 8 bit
     MOV B, #8
 
-    ; calculate position offset from the right side
+    ; calculate offset from the right side
     MUL AB
 
     ; add position of the highest "1" of the current byte to the calculated offset
@@ -187,7 +186,7 @@ FIND_FIRST_1_NOMOD_FOUND:
 ; OUTPUT(S): 
 ;   R2 - Position of the highest "1" bit in a byte, if no "1" found returns 0xFF. Position is counted from zero.
 ; MODIFIES:
-;   A
+;   A, R2
 ; -------------------------------------------------------------------
 FIND_FIRST_1_IN_BYTE:
     ; sets first position of 8 in a byte, fixed value
