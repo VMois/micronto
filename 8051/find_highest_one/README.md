@@ -1,6 +1,6 @@
 # Find highest one - Documentation
 
-Author: Vladyslav Moisieienkov. **The solution is my own**.
+Author: Vladyslav Moisieienkov. **I declare the solution is my own**.
 
 The code can be also found in the [GitHub repository](https://github.com/VMois/micronto/tree/main/8051/find_highest_one).
 
