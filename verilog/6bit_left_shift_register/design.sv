@@ -13,12 +13,13 @@ module shiftreg(clk, rst, en, load, shr);
     begin
       if (rst) shr <= load;
       else if (en) begin
-        shr[5] <= shr[4];
-        shr[4] <= shr[3];
-        shr[3] <= shr[2];
-        shr[2] <= shr[1];
-        shr[1] <= shr[0];
-        shr[0] <= 0;
+        // shr[5] <= shr[4];
+        // shr[4] <= shr[3];
+        // shr[3] <= shr[2];
+        // shr[2] <= shr[1];
+        // shr[1] <= shr[0];
+        // shr[0] <= 0;
+        shr <= {shr[4:0], 1'b0}
       end
     end
  
